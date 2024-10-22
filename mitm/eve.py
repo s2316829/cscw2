@@ -4,7 +4,7 @@ import time
 from simple_sockets import Socket
 from diffie_hellman import DH
 from symmetric import AES
-from const import DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE
+from const import DEFAULT_BUFFER_SIZE, BUFFER_DIR, BUFFER_FILE_NAME
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -13,22 +13,21 @@ logger = logging.getLogger(__name__)
 class Eve:
     def __init__(self, mode):
         self.mode = mode
-        self.alice_socket = SimpleSocket('127.0.0.1', 5000)
-        self.bob_socket = SimpleSocket('127.0.0.1', 5001)
-        # Removed unused DiffieHellman import and related attributes
+        self.alice_socket = Socket('alice', BUFFER_DIR, BUFFER_FILE_NAME)
+        self.bob_socket = Socket('bob', BUFFER_DIR, BUFFER_FILE_NAME)
 
     def relay(self):
         """Relay messages between Alice and Bob without modification."""
         logger.info("Starting relay mode.")
         while True:
             try:
-                data = self.alice_socket.receive(BUFFER_SIZE)
+                data = self.alice_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[RELAY] Alice to Bob: {data}")
                 self.bob_socket.send(data)
 
-                data = self.bob_socket.receive(BUFFER_SIZE)
+                data = self.bob_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[RELAY] Bob to Alice: {data}")
@@ -43,7 +42,7 @@ class Eve:
         while True:
             try:
                 # Intercept Alice's message and modify it.
-                data = self.alice_socket.receive(BUFFER_SIZE)
+                data = self.alice_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[BREAK] Intercepted from Alice: {data}")
@@ -52,7 +51,7 @@ class Eve:
                 self.bob_socket.send(modified_data)
 
                 # Intercept Bob's message and modify it.
-                data = self.bob_socket.receive(BUFFER_SIZE)
+                data = self.bob_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[BREAK] Intercepted from Bob: {data}")
@@ -69,7 +68,7 @@ class Eve:
         while True:
             try:
                 # Intercept Alice's message.
-                data = self.alice_socket.receive(BUFFER_SIZE)
+                data = self.alice_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[CUSTOM] Intercepted from Alice: {data.decode()}")
@@ -79,7 +78,7 @@ class Eve:
                 self.bob_socket.send(custom_message)
 
                 # Intercept Bob's message.
-                data = self.bob_socket.receive(BUFFER_SIZE)
+                data = self.bob_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[CUSTOM] Intercepted from Bob: {data.decode()}")
@@ -93,10 +92,8 @@ class Eve:
 
     def start(self):
         try:
-            self.alice_socket.accept()
-            logger.info("Connected to Alice.")
-            self.bob_socket.accept()
-            logger.info("Connected to Bob.")
+            # Accept connections for Alice and Bob (no need to accept for Unix sockets).
+            logger.info("Connected to Alice and Bob.")
 
             if self.mode == '--relay':
                 self.relay()
@@ -111,8 +108,8 @@ class Eve:
             logger.error(f"[ERROR] Connection failed: {e}")
 
         finally:
-            self.alice_socket.close()
-            self.bob_socket.close()
+            self.alice_socket.close(BUFFER_DIR, BUFFER_FILE_NAME)
+            self.bob_socket.close(BUFFER_DIR, BUFFER_FILE_NAME)
             logger.info("Closed connections.")
 
 if __name__ == "__main__":
