@@ -2,8 +2,6 @@ import os
 import sys
 import time
 from simple_sockets import Socket
-from diffie_hellman import DH
-from symmetric import AES
 from const import DEFAULT_BUFFER_SIZE, BUFFER_DIR, BUFFER_FILE_NAME
 import logging
 
@@ -17,7 +15,6 @@ class Eve:
         self.bob_socket = Socket('bob', BUFFER_DIR, BUFFER_FILE_NAME)
 
     def relay(self):
-        """Relay messages between Alice and Bob without modification."""
         logger.info("Starting relay mode.")
         while True:
             try:
@@ -37,11 +34,9 @@ class Eve:
                 break
 
     def break_heart(self):
-        """Change the messages in transit to break the hearts of Alice and Bob."""
         logger.info("Starting break-heart mode.")
         while True:
             try:
-                # Intercept Alice's message and modify it.
                 data = self.alice_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
@@ -50,7 +45,6 @@ class Eve:
                 logger.info(f"[BREAK] Modifying message to Bob: {modified_data}")
                 self.bob_socket.send(modified_data)
 
-                # Intercept Bob's message and modify it.
                 data = self.bob_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
@@ -63,28 +57,25 @@ class Eve:
                 break
 
     def custom_mode(self):
-        """Prompt the user to manually modify the messages being relayed."""
         logger.info("Starting custom message mode.")
         while True:
             try:
-                # Intercept Alice's message.
                 data = self.alice_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[CUSTOM] Intercepted from Alice: {data.decode()}")
                 custom_message = input("Enter custom message to Bob: ").encode()
                 if not custom_message:
-                    custom_message = data  # Use original message if no input
+                    custom_message = data
                 self.bob_socket.send(custom_message)
 
-                # Intercept Bob's message.
                 data = self.bob_socket.recv(DEFAULT_BUFFER_SIZE)
                 if not data:
                     break
                 logger.info(f"[CUSTOM] Intercepted from Bob: {data.decode()}")
                 custom_message = input("Enter custom message to Alice: ").encode()
                 if not custom_message:
-                    custom_message = data  # Use original message if no input
+                    custom_message = data
                 self.alice_socket.send(custom_message)
             except Exception as e:
                 logger.error(f"[ERROR] Custom mode failed: {e}")
@@ -92,7 +83,6 @@ class Eve:
 
     def start(self):
         try:
-            # Accept connections for Alice and Bob (no need to accept for Unix sockets).
             logger.info("Connected to Alice and Bob.")
 
             if self.mode == '--relay':
