@@ -1,10 +1,10 @@
 import os
 import sys
 import time
-from simple_sockets import SimpleSocket
+from simple_sockets import Socket
 from diffie_hellman import DH
-from symmetric import Symmetric
-from const import BUFFER_SIZE
+from symmetric import AES
+from const import DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE
 import logging
 
 logging.basicConfig(level=logging.INFO)
